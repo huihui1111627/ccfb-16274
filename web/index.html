@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>级联故障推演 · Cascade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>级联故障<span>推演</span></h1>
+    <span class="badge" id="company-name">加载中…</span>
+    <span class="stat">服务 <b id="stat-services">–</b></span>
+    <span class="stat">调用边 <b id="stat-edges">–</b></span>
+    <span class="stat">倒挂边 <b id="stat-inverted">–</b></span>
+    <span class="stat">最大放大 <b id="stat-amp">–</b></span>
+    <span class="spacer"></span>
+    <span class="stat" id="status"></span>
+    <button class="btn ghost" id="btn-incident">▶ 复现上周故障</button>
+  </header>
+
+  <main>
+    <section id="left">
+      <div class="toolbar">
+        <label>视角</label>
+        <select id="view-mode">
+          <option value="incident">事故链邻域</option>
+          <option value="inverted">倒挂子图</option>
+          <option value="relevant">问题子图（倒挂+重试）</option>
+          <option value="all">全公司</option>
+        </select>
+        <label>域</label>
+        <select id="domain-filter"><option value="">全部</option></select>
+        <span class="sep"></span>
+        <label><input type="checkbox" id="chk-inverted" checked> 标出倒挂</label>
+        <label><input type="checkbox" id="chk-labels" checked> 边标注</label>
+        <span class="sep"></span>
+        <label>故障点</label>
+        <select id="fault-service"></select>
+        <label>慢倍数</label>
+        <input type="number" id="fault-slow" value="260" min="1" step="10">
+        <label>错误率</label>
+        <input type="number" id="fault-err" value="0" min="0" max="1" step="0.05">
+        <label>入口RPS</label>
+        <input type="number" id="entry-rps" value="4" min="1" step="1">
+        <button class="btn primary" id="btn-simulate">推演</button>
+        <span class="grow"></span>
+        <button class="btn ghost" id="btn-reset-view">重置视图</button>
+      </div>
+
+      <div id="canvas-wrap">
+        <svg id="graph"></svg>
+        <div class="hud" id="hud"></div>
+        <div class="hint" id="canvas-hint">点击服务节点选择故障点 · 点击边查看三来源配置</div>
+        <div class="legend">
+          <div class="row"><span class="swatch" style="background:#3f4a5a"></span>正常调用</div>
+          <div class="row"><span class="swatch" style="background:#d29922"></span>有重试（attempts&gt;1）</div>
+          <div class="row"><span class="swatch" style="background:#f85149;border-top:2px dashed #f85149;height:2px"></span>超时倒挂（上游不够下游重试）</div>
+          <div class="row"><span class="swatch" style="background:#f778ba"></span>上周事故链</div>
+          <div class="row"><span class="dot" style="background:#3fb950"></span>入口服务</div>
+          <div class="row"><span class="dot" style="background:#f85149"></span>推演中被打满</div>
+        </div>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+
+      <div id="playback">
+        <div class="play-controls">
+          <button class="btn" id="btn-play" disabled>▶</button>
+          <button class="btn ghost" id="btn-step-back" disabled>◀</button>
+          <button class="btn ghost" id="btn-step-fwd" disabled>▶|</button>
+          <label>速度</label>
+          <select id="play-speed">
+            <option value="8">8×</option>
+            <option value="4">4×</option>
+            <option value="2" selected>2×</option>
+            <option value="1">1×</option>
+            <option value="0.5">0.5×</option>
+          </select>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="track"><div class="fill" id="tl-fill"></div></div>
+          <div class="playhead" id="tl-head"></div>
+          <input type="range" id="tl-range" min="0" max="0" value="0" disabled>
+        </div>
+        <div class="frame-label" id="frame-label">未推演</div>
+      </div>
+    </section>
+
+    <aside id="right">
+      <div class="tabs">
+        <button data-tab="config" class="active">配置解析</button>
+        <button data-tab="inversions">倒挂</button>
+        <button data-tab="amplification">放大分析</button>
+        <button data-tab="simulation">推演结果</button>
+        <button data-tab="proposals">修改建议</button>
+        <button data-tab="verify">核对</button>
+      </div>
+      <div class="panel-body" id="panel"></div>
+    </aside>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
